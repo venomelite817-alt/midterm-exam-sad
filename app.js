@@ -1,6 +1,6 @@
-// Supabase config - use environment variables names only in README; fill values in local setup
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+// Supabase config
+const SUPABASE_URL = "https://yxfhnmlfpaccmwuxiiid.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_aETH5zve1G27qjlmMds7dg_VTQMj6t5";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

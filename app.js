@@ -46,7 +46,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
     if (session) loadUser(); else location.reload();
 });
 
-// Scholar submission
+// Scholar submission (insert or update returned)
 document.getElementById('submissionForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (currentProfile.role !== 'scholar') return;
@@ -59,18 +59,35 @@ document.getElementById('submissionForm').addEventListener('submit', async (e) =
     const dropped = parseInt(document.getElementById('dropped').value);
     const evidence = document.getElementById('evidence').value;
     
-    // Validation
     if (gwa < 1.00 || gwa > 5.00) { document.getElementById('subMsg').textContent = 'Invalid GWA (1.00-5.00)'; return; }
     if (units < 0 || failed < 0 || inc < 0 || dropped < 0 || isNaN(units) || isNaN(failed) || isNaN(inc) || isNaN(dropped)) { document.getElementById('subMsg').textContent = 'Negative counts not allowed'; return; }
     if (!evidence) { document.getElementById('subMsg').textContent = 'Evidence reference required'; return; }
     
-    // Get assignment
     const { data: assignment } = await supabase.from('scholar_assignments').select('id').eq('scholar_id', currentProfile.id).eq('academic_year', ay).eq('semester', sem).single();
     if (!assignment) { document.getElementById('subMsg').textContent = 'No assignment found for this AY/Sem'; return; }
     
-    // Check duplicate
-    const { data: existing } = await supabase.from('semester_submissions').select('id').eq('scholar_id', currentProfile.id).eq('academic_year', ay).eq('semester', sem);
-    if (existing && existing.length > 0) { document.getElementById('subMsg').textContent = 'Duplicate semester submission exists'; return; }
+    const { data: existing } = await supabase.from('semester_submissions').select('*').eq('scholar_id', currentProfile.id).eq('academic_year', ay).eq('semester', sem).single();
+    if (existing) {
+        if (existing.submission_status === 'Returned') {
+            const { error } = await supabase.from('semester_submissions').update({
+                gwa, enrolled_units: units, failed_count: failed, incomplete_count: inc, dropped_count: dropped,
+                evidence_reference: evidence,
+                submission_status: 'Pending',
+                verified_by: null, verified_at: null, verification_reason: null,
+                academic_compliance: 'UnEvaluated',
+                compliance_reasons: [], evaluated_at: null, evaluated_by: null,
+                renewal_decision: 'Pending', decision_notes: null, decided_at: null, decided_by: null
+            }).eq('id', existing.id);
+            if (error) { document.getElementById('subMsg').textContent = error.message; return; }
+            await supabase.from('evaluation_history').insert({ submission_id: existing.id, action: 'verification', actor_role: 'scholar', actor_id: currentProfile.id, from_status: 'Returned', to_status: 'Pending', notes: 'Resubmitted after correction' });
+            document.getElementById('subMsg').textContent = 'Resubmitted - Pending verification';
+            loadMySubmissions();
+            return;
+        } else {
+            document.getElementById('subMsg').textContent = 'Duplicate semester submission exists';
+            return;
+        }
+    }
     
     const { error } = await supabase.from('semester_submissions').insert({
         scholar_id: currentProfile.id,
@@ -84,7 +101,7 @@ document.getElementById('submissionForm').addEventListener('submit', async (e) =
         renewal_decision: 'Pending'
     });
     if (error) { document.getElementById('subMsg').textContent = error.message; return; }
-    document.getElementById('subMsg').textContent = 'Submitted successfully';
+    document.getElementById('subMsg').textContent = 'Submitted - Pending verification';
     loadMySubmissions();
 });
 
@@ -102,12 +119,13 @@ document.getElementById('applyFilters').addEventListener('click', loadDashboard)
 async function loadDashboard() {
     const ay = document.getElementById('staffAy').value;
     const sem = parseInt(document.getElementById('staffSem').value);
-    const { data } = await supabase.from('semester_submissions').select('*, scholar_assignments(program_id, scholarship_programs(code))').eq('academic_year', ay).eq('semester', sem);
-    const total = data?.length || 0;
+    const { data: assignments } = await supabase.from('scholar_assignments').select('scholar_id').eq('academic_year', ay).eq('semester', sem);
+    const totalAssigned = assignments ? [...new Set(assignments.map(a => a.scholar_id))].length : 0;
+    const { data } = await supabase.from('semester_submissions').select('*').eq('academic_year', ay).eq('semester', sem);
     const pending = data?.filter(s => s.submission_status === 'Pending').length || 0;
     const compliant = data?.filter(s => s.academic_compliance === 'Compliant').length || 0;
     const deficient = data?.filter(s => s.academic_compliance === 'With Deficiency').length || 0;
-    document.getElementById('dashCounts').innerHTML = 'Total: ' + total + ', Pending Verification: ' + pending + ', Compliant: ' + compliant + ', With Deficiency: ' + deficient;
+    document.getElementById('dashCounts').innerHTML = 'Assigned scholars: ' + totalAssigned + ' | Pending verification: ' + pending + ' | Compliant: ' + compliant + ' | With Deficiency: ' + deficient;
 }
 
 async function loadAllSubmissions() {
@@ -132,12 +150,11 @@ async function loadAllSubmissions() {
 async function selectSubmission(id) {
     const { data: s } = await supabase.from('semester_submissions').select('*, user_profiles!scholar_id(*), scholar_assignments(*, scholarship_programs(*))').eq('id', id).single();
     currentSubmission = s;
-    // Verify card
     document.getElementById('verifyCard').style.display = 'block';
-    document.getElementById('verifyInfo').innerHTML = 'Student: '+s.user_profiles.student_id+'<br>Evidence: '+s.evidence_reference+'<br>Status: '+s.submission_status;
-    // Eval card
+    document.getElementById('verifyInfo').innerHTML = 'Student: '+s.user_profiles.student_id+' '+s.user_profiles.full_name+'<br>AY:'+s.academic_year+' Sem:'+s.semester+'<br>Evidence: '+s.evidence_reference+'<br>Status: '+s.submission_status;
     document.getElementById('evalCard').style.display = 'block';
-    document.getElementById('evalInfo').innerHTML = 'GWA:'+s.gwa+', Units:'+s.enrolled_units+', Failed:'+s.failed_count+', INC:'+s.incomplete_count+', Drop:'+s.dropped_count+'<br>Program:'+s.scholar_assignments.scholarship_programs.code;
+    document.getElementById('evalInfo').innerHTML = 'Program: '+s.scholar_assignments.scholarship_programs.code+'<br>GWA:'+s.gwa+', Units:'+s.enrolled_units+', Failed:'+s.failed_count+', INC:'+s.incomplete_count+', Drop:'+s.dropped_count+'<br>Compliance: '+s.academic_compliance+'<br>Decision: '+s.renewal_decision;
+    document.getElementById('policyChecks').innerHTML = '';
     loadHistory(id);
 }
 
@@ -164,37 +181,51 @@ document.getElementById('returnBtn').addEventListener('click', async () => {
 });
 
 // Evaluation
+document.getElementById('evalBtn').addEventListener('click', async () => {
+    if (!currentSubmission) return;
+    if (currentSubmission.submission_status !== 'Verified') { alert('Missing or unverified evidence prevents final evaluation'); return; }
+    await runEvaluation(currentSubmission);
+    const { data: s2 } = await supabase.from('semester_submissions').select('*, user_profiles!scholar_id(*), scholar_assignments(*, scholarship_programs(*))').eq('id', currentSubmission.id).single();
+    currentSubmission = s2;
+    document.getElementById('evalInfo').innerHTML = 'Program: '+s2.scholar_assignments.scholarship_programs.code+'<br>GWA:'+s2.gwa+', Units:'+s2.enrolled_units+', Failed:'+s2.failed_count+', INC:'+s2.incomplete_count+', Drop:'+s2.dropped_count+'<br>Compliance: '+s2.academic_compliance+'<br>Decision: '+s2.renewal_decision;
+    loadHistory(currentSubmission.id);
+    loadAllSubmissions();
+    loadDashboard();
+});
+
 document.getElementById('approveBtn').addEventListener('click', async () => {
     if (!currentSubmission) return;
     if (currentSubmission.submission_status !== 'Verified') { alert('Missing or unverified evidence prevents final evaluation'); return; }
     if (currentSubmission.academic_compliance !== 'Compliant') { alert('Cannot approve deficient record'); return; }
-    const { error } = await supabase.from('semester_submissions').update({ renewal_decision: 'Approved', decision_notes: document.getElementById('decisionNotes').value, decided_at: new Date().toISOString(), decided_by: currentProfile.id }).eq('id', currentSubmission.id);
+    const notes = document.getElementById('decisionNotes').value;
+    const { error } = await supabase.from('semester_submissions').update({ renewal_decision: 'Approved', decision_notes: notes, decided_at: new Date().toISOString(), decided_by: currentProfile.id }).eq('id', currentSubmission.id);
     if (error) { alert(error.message); return; }
-    await supabase.from('evaluation_history').insert({ submission_id: currentSubmission.id, action: 'renewal', actor_role: currentProfile.role, actor_id: currentProfile.id, to_status: 'Approved', notes: document.getElementById('decisionNotes').value });
+    await supabase.from('evaluation_history').insert({ submission_id: currentSubmission.id, action: 'renewal', actor_role: currentProfile.role, actor_id: currentProfile.id, to_status: 'Approved', notes });
     alert('Approved');
     loadAllSubmissions();
+    loadDashboard();
     selectSubmission(currentSubmission.id);
 });
 
 document.getElementById('holdBtn').addEventListener('click', async () => {
     if (!currentSubmission) return;
     if (currentSubmission.submission_status !== 'Verified') { alert('Missing or unverified evidence prevents final evaluation'); return; }
-    // Run evaluation first if not evaluated
     if (currentSubmission.academic_compliance === 'UnEvaluated') {
-        await evaluateSubmission(currentSubmission);
-        // reload
+        await runEvaluation(currentSubmission);
         const { data: s2 } = await supabase.from('semester_submissions').select('*, user_profiles!scholar_id(*), scholar_assignments(*, scholarship_programs(*))').eq('id', currentSubmission.id).single();
         currentSubmission = s2;
     }
-    const { error } = await supabase.from('semester_submissions').update({ renewal_decision: 'Held', decision_notes: document.getElementById('decisionNotes').value, decided_at: new Date().toISOString(), decided_by: currentProfile.id }).eq('id', currentSubmission.id);
+    const notes = document.getElementById('decisionNotes').value;
+    const { error } = await supabase.from('semester_submissions').update({ renewal_decision: 'Held', decision_notes: notes, decided_at: new Date().toISOString(), decided_by: currentProfile.id }).eq('id', currentSubmission.id);
     if (error) { alert(error.message); return; }
-    await supabase.from('evaluation_history').insert({ submission_id: currentSubmission.id, action: 'renewal', actor_role: currentProfile.role, actor_id: currentProfile.id, to_status: 'Held', notes: document.getElementById('decisionNotes').value });
+    await supabase.from('evaluation_history').insert({ submission_id: currentSubmission.id, action: 'renewal', actor_role: currentProfile.role, actor_id: currentProfile.id, to_status: 'Held', notes });
     alert('Held');
     loadAllSubmissions();
+    loadDashboard();
     selectSubmission(currentSubmission.id);
 });
 
-async function evaluateSubmission(s) {
+async function runEvaluation(s) {
     const prog = s.scholar_assignments.scholarship_programs;
     const reasons = [];
     let compliant = true;
@@ -203,15 +234,13 @@ async function evaluateSubmission(s) {
     if (s.failed_count > prog.allowed_failed) { reasons.push('Exceeds allowed failed subjects'); compliant = false; }
     if (s.incomplete_count > prog.allowed_incomplete) { reasons.push('Exceeds allowed incomplete grades'); compliant = false; }
     if (s.dropped_count > prog.allowed_dropped) { reasons.push('Exceeds allowed dropped subjects'); compliant = false; }
-    // deadline check - B05 submitted late
     const deadline = new Date(prog.deadline_at);
     const submitted = new Date(s.submitted_at);
     if (submitted > deadline) { reasons.push('Late submission'); compliant = false; }
-    
     const comp = compliant ? 'Compliant' : 'With Deficiency';
     await supabase.from('semester_submissions').update({ academic_compliance: comp, compliance_reasons: reasons, evaluated_at: new Date().toISOString(), evaluated_by: currentProfile.id }).eq('id', s.id);
     await supabase.from('evaluation_history').insert({ submission_id: s.id, action: 'evaluation', actor_role: currentProfile.role, actor_id: currentProfile.id, to_status: comp, details: reasons, notes: reasons.join('; ') });
-    document.getElementById('policyChecks').innerHTML = '<b>Result:</b> ' + comp + '<br><b>Reasons:</b> ' + (reasons.length?reasons.join('<br>'):'None');
+    document.getElementById('policyChecks').innerHTML = '<b>Result:</b> ' + comp + '<br><b>Policy checks & reasons:</b><br>' + (reasons.length ? reasons.map(r=>'- '+r).join('<br>') : '- All checks passed');
 }
 
 async function loadHistory(id) {

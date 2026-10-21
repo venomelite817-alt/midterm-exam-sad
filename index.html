@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Scholarship Monitoring and Academic Compliance System</title>
+    <title>Scholarship Monitoring System</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header>
-        <h1>Student Scholarship Monitoring and Academic Compliance System</h1>
+        <h1>Scholarship Monitoring & Compliance</h1>
         <div id="authSection">
             <div id="loggedIn" style="display:none;">
                 <span id="userInfo"></span>
@@ -25,20 +25,29 @@
 
     <main>
         <section id="roleSection" style="display:none;">
+            <!-- Scholar -->
             <div id="scholarView" style="display:none;">
-                <h2>Scholar Dashboard</h2>
+                <h2>Scholar</h2>
                 <div class="card">
-                    <h3>Submit Semester Grades</h3>
+                    <h3>Submit / Correct Grades</h3>
                     <form id="submissionForm">
-                        <label>Academic Year <input type="text" id="ay" value="2026-2027" required></label>
-                        <label>Semester <input type="number" id="sem" value="1" required></label>
-                        <label>GWA <input type="number" step="0.01" id="gwa" required></label>
-                        <label>Enrolled Units <input type="number" id="units" required></label>
-                        <label>Failed Count <input type="number" id="failed" required></label>
-                        <label>Incomplete Count <input type="number" id="inc" required></label>
-                        <label>Dropped Count <input type="number" id="dropped" required></label>
-                        <label>Grade Document Reference <input type="text" id="evidence" required></label>
-                        <button type="submit">Submit</button>
+                        <div>
+                            <label>AY <input type="text" id="ay" value="2026-2027" required></label>
+                            <label>Sem <input type="number" id="sem" value="1" required></label>
+                        </div>
+                        <div>
+                            <label>GWA <input type="number" step="0.01" id="gwa" required></label>
+                            <label>Units <input type="number" id="units" required></label>
+                        </div>
+                        <div>
+                            <label>Failed <input type="number" id="failed" required></label>
+                            <label>INC <input type="number" id="inc" required></label>
+                            <label>Drop <input type="number" id="dropped" required></label>
+                        </div>
+                        <div>
+                            <label>Grade Doc Ref <input type="text" id="evidence" required></label>
+                        </div>
+                        <button type="submit">Submit / Update</button>
                     </form>
                     <div id="subMsg"></div>
                 </div>
@@ -48,38 +57,53 @@
                 </div>
             </div>
 
+            <!-- Staff -->
             <div id="staffView" style="display:none;">
-                <h2>Staff Dashboard</h2>
+                <h2>Staff</h2>
                 <div class="card">
-                    <h3>Filters</h3>
-                    <label>Academic Year <input type="text" id="staffAy" value="2026-2027"></label>
-                    <label>Semester <input type="number" id="staffSem" value="1"></label>
-                    <label>Search (Student ID/Name) <input type="text" id="search"></label>
-                    <label>Program <select id="progFilter"><option value="">All</option><option value="EXCELLENCE">Excellence</option><option value="ACCESS">Access</option></select></label>
-                    <label>Compliance <select id="compFilter"><option value="">All</option><option value="Compliant">Compliant</option><option value="With Deficiency">With Deficiency</option><option value="UnEvaluated">UnEvaluated</option></select></label>
+                    <h3>Filter</h3>
+                    <label>AY <input type="text" id="staffAy" value="2026-2027"></label>
+                    <label>Sem <input type="number" id="staffSem" value="1"></label>
+                    <label>Search <input type="text" id="search" placeholder="ID or Name"></label>
+                    <label>Program 
+                        <select id="progFilter">
+                            <option value="">All</option>
+                            <option value="EXCELLENCE">Excellence</option>
+                            <option value="ACCESS">Access</option>
+                        </select>
+                    </label>
+                    <label>Compliance
+                        <select id="compFilter">
+                            <option value="">All</option>
+                            <option value="Compliant">Compliant</option>
+                            <option value="With Deficiency">With Deficiency</option>
+                            <option value="UnEvaluated">UnEvaluated</option>
+                        </select>
+                    </label>
                     <button id="applyFilters">Apply</button>
                 </div>
                 <div class="card">
-                    <h3>Dashboard Counts</h3>
+                    <h3>Dashboard</h3>
                     <div id="dashCounts"></div>
                 </div>
                 <div class="card">
-                    <h3>All Submissions</h3>
+                    <h3>Submissions</h3>
                     <div id="allSubmissions"></div>
                 </div>
                 <div class="card" id="verifyCard" style="display:none;">
                     <h3>Verification</h3>
                     <div id="verifyInfo"></div>
-                    <button id="verifyBtn">Mark Verified</button>
-                    <button id="returnBtn">Mark Returned</button>
+                    <button id="verifyBtn">Verify</button>
+                    <button id="returnBtn">Return</button>
                     <input type="text" id="verifyReason" placeholder="Reason">
                 </div>
                 <div class="card" id="evalCard" style="display:none;">
-                    <h3>Compliance Evaluation & Renewal</h3>
+                    <h3>Evaluation & Renewal</h3>
                     <div id="evalInfo"></div>
+                    <button id="evalBtn">Evaluate Compliance</button>
                     <div id="policyChecks"></div>
-                    <label>Decision Notes <input type="text" id="decisionNotes"></label>
-                    <button id="approveBtn">Approve (requires Compliant)</button>
+                    <label>Notes <input type="text" id="decisionNotes"></label>
+                    <button id="approveBtn">Approve</button>
                     <button id="holdBtn">Hold</button>
                 </div>
                 <div class="card">

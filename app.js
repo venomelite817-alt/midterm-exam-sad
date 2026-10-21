@@ -26,7 +26,19 @@ async function loadUser() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     currentUser = user;
-    const { data: profile } = await supabase.from('user_profiles').select('*').eq('auth_user_id', user.id).single();
+    let { data: profile } = await supabase.from('user_profiles').select('*').eq('auth_user_id', user.id).maybeSingle();
+    if (!profile) {
+        const { data: profileByEmail } = await supabase.from('user_profiles').select('*').eq('email', user.email).maybeSingle();
+        if (profileByEmail) {
+            await supabase.from('user_profiles').update({ auth_user_id: user.id }).eq('id', profileByEmail.id);
+            profile = { ...profileByEmail, auth_user_id: user.id };
+        }
+    }
+    if (!profile) {
+        alert('No profile linked to ' + user.email + '. Make sure this email exists in user_profiles.');
+        await supabase.auth.signOut();
+        return;
+    }
     currentProfile = profile;
     document.getElementById('loggedOut').style.display = 'none';
     document.getElementById('loggedIn').style.display = 'flex';

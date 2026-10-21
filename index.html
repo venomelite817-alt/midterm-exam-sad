@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Scholarship Monitoring and Academic Compliance System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header>
+        <h1>Student Scholarship Monitoring and Academic Compliance System</h1>
+        <div id="authSection">
+            <div id="loggedIn" style="display:none;">
+                <span id="userInfo"></span>
+                <button id="logoutBtn">Logout</button>
+            </div>
+            <div id="loggedOut">
+                <input type="email" id="email" placeholder="Email">
+                <input type="password" id="password" placeholder="Password">
+                <button id="loginBtn">Login</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="roleSection" style="display:none;">
+            <div id="scholarView" style="display:none;">
+                <h2>Scholar Dashboard</h2>
+                <div class="card">
+                    <h3>Submit Semester Grades</h3>
+                    <form id="submissionForm">
+                        <label>Academic Year <input type="text" id="ay" value="2026-2027" required></label>
+                        <label>Semester <input type="number" id="sem" value="1" required></label>
+                        <label>GWA <input type="number" step="0.01" id="gwa" required></label>
+                        <label>Enrolled Units <input type="number" id="units" required></label>
+                        <label>Failed Count <input type="number" id="failed" required></label>
+                        <label>Incomplete Count <input type="number" id="inc" required></label>
+                        <label>Dropped Count <input type="number" id="dropped" required></label>
+                        <label>Grade Document Reference <input type="text" id="evidence" required></label>
+                        <button type="submit">Submit</button>
+                    </form>
+                    <div id="subMsg"></div>
+                </div>
+                <div class="card">
+                    <h3>My Submissions</h3>
+                    <div id="mySubmissions"></div>
+                </div>
+            </div>
+
+            <div id="staffView" style="display:none;">
+                <h2>Staff Dashboard</h2>
+                <div class="card">
+                    <h3>Filters</h3>
+                    <label>Academic Year <input type="text" id="staffAy" value="2026-2027"></label>
+                    <label>Semester <input type="number" id="staffSem" value="1"></label>
+                    <label>Search (Student ID/Name) <input type="text" id="search"></label>
+                    <label>Program <select id="progFilter"><option value="">All</option><option value="EXCELLENCE">Excellence</option><option value="ACCESS">Access</option></select></label>
+                    <label>Compliance <select id="compFilter"><option value="">All</option><option value="Compliant">Compliant</option><option value="With Deficiency">With Deficiency</option><option value="UnEvaluated">UnEvaluated</option></select></label>
+                    <button id="applyFilters">Apply</button>
+                </div>
+                <div class="card">
+                    <h3>Dashboard Counts</h3>
+                    <div id="dashCounts"></div>
+                </div>
+                <div class="card">
+                    <h3>All Submissions</h3>
+                    <div id="allSubmissions"></div>
+                </div>
+                <div class="card" id="verifyCard" style="display:none;">
+                    <h3>Verification</h3>
+                    <div id="verifyInfo"></div>
+                    <button id="verifyBtn">Mark Verified</button>
+                    <button id="returnBtn">Mark Returned</button>
+                    <input type="text" id="verifyReason" placeholder="Reason">
+                </div>
+                <div class="card" id="evalCard" style="display:none;">
+                    <h3>Compliance Evaluation & Renewal</h3>
+                    <div id="evalInfo"></div>
+                    <div id="policyChecks"></div>
+                    <label>Decision Notes <input type="text" id="decisionNotes"></label>
+                    <button id="approveBtn">Approve (requires Compliant)</button>
+                    <button id="holdBtn">Hold</button>
+                </div>
+                <div class="card">
+                    <h3>History</h3>
+                    <div id="history"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

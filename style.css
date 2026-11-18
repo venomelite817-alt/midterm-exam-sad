@@ -15,3 +15,14 @@ th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
 th { background: #f0f0f0; }
 #authSection input { margin-right: 4px; }
 #userInfo { margin-right: 8px; }
+.nav a { color: #fff; margin-right: 12px; text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; }
+.stat span { display: block; font-size: 13px; color: #555; }
+.stat b { display: block; font-size: 22px; margin-top: 4px; }
+.bar-row { display: flex; align-items: center; margin: 6px 0; font-size: 13px; }
+.bar-label { width: 140px; }
+.bar-track { flex: 1; background: #eee; height: 14px; }
+.bar-fill { display: block; height: 100%; background: #333; }
+.bar-value { width: 34px; text-align: right; }

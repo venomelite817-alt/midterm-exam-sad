@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Scholarship Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header>
+        <h1>Scholarship Monitoring & Compliance</h1>
+        <nav class="nav">
+            <a href="index.html">Main App</a>
+            <a href="dashboard.html">Dashboard</a>
+        </nav>
+        <div id="authSection">
+            <div id="loggedIn" style="display:none;">
+                <span id="userInfo"></span>
+                <button id="logoutBtn">Logout</button>
+            </div>
+            <div id="loggedOut">
+                <input type="email" id="email" placeholder="Email">
+                <input type="password" id="password" placeholder="Password">
+                <button id="loginBtn">Login</button>
+                <div id="loginMsg"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="roleSection" style="display:none;">
+            <div id="scholarDash" style="display:none;">
+                <h2>Scholar Dashboard</h2>
+                <div class="card">
+                    <h3>My Summary</h3>
+                    <div id="scholarStats" class="stat-grid"></div>
+                </div>
+                <div class="card">
+                    <h3>My Breakdown</h3>
+                    <div id="scholarBars"></div>
+                </div>
+                <div class="card">
+                    <h3>My Submissions</h3>
+                    <div id="scholarTable"></div>
+                </div>
+            </div>
+
+            <div id="staffDash" style="display:none;">
+                <h2>Staff Dashboard</h2>
+                <div class="card">
+                    <h3>Filter</h3>
+                    <label>AY <input type="text" id="dashAy" value="2026-2027"></label>
+                    <label>Sem <input type="number" id="dashSem" value="1"></label>
+                    <button id="dashApply">Apply</button>
+                </div>
+                <div class="card">
+                    <h3>Overview</h3>
+                    <div id="staffStats" class="stat-grid"></div>
+                </div>
+                <div class="card">
+                    <h3>Breakdown</h3>
+                    <div id="staffBars"></div>
+                </div>
+                <div class="card">
+                    <h3>Recent Submissions</h3>
+                    <div id="staffTable"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
